@@ -6,6 +6,38 @@ Content-Type: application/json
 GET {{server}}/api/commits?owner=2122-4ahif-nvs&repository=13-jetpack-compose-pathway-christophhandel&branch=main
 Content-Type: application/json
 
+//HTTP/1.1 200 OK
+//Content-Type: application/json;charset=UTF-8
+//transfer-encoding: chunked
+//
+//[
+//{
+//"owner": "2122-4ahif-nvs",
+//"repository": "13-jetpack-compose-pathway-christophhandel",
+//"branch": "main",
+//"oid": "7c10ad4b9b5619d3af47f1d4bd7b44a554bb68c7",
+//"message": "Handel - 11/9 - New RallyNavHost function filled with extracted code from RallyApp",
+//"messageBody": "…from RallyApp",
+//"commitDateTime": "2022-06-11T17:30:55",
+//"pushedDate": "2022-06-11T17:31:08",
+//"authorName": "Christoph",
+//"authorEmail": "christoph.handel@icloud.com"
+//},
+//{
+//"owner": "2122-4ahif-nvs",
+//"repository": "13-jetpack-compose-pathway-christophhandel",
+//"branch": "main",
+//"oid": "6d6e19d7b1677b109bd506f52435275110348cfa",
+//"message": "Handel - 11/9 - DeepLinks added to make my app accessible for third party apps",
+//"messageBody": "…arty apps",
+//"commitDateTime": "2022-06-11T17:27:29",
+//"pushedDate": "2022-06-11T17:27:33",
+//"authorName": "Christoph",
+//"authorEmail": "christoph.handel@icloud.com"
+//},
+// ...
+//]
+
 ###
 
 GET {{server}}/api/commits?owner=htl-leonding&repository=jetpack-compose-pathway&branch=main

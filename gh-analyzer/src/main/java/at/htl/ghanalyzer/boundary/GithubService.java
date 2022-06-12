@@ -51,29 +51,36 @@ public class GithubService {
     ) {
         String graphqlQuery =
                 """
-                {
-                  repository(owner: $owner, name: $repository) {
-                    refs(query: $branch, refPrefix: "refs/heads/", first: 1) {
-                      nodes {
-                        target {
-                          ... on Commit {
-                            history(first: 100) {
+                        {
+                          repository(owner: $owner, name: $repository) {
+                            refs(query: $branch, refPrefix: "refs/heads/", first: 1) {
                               nodes {
-                                message
-                                committedDate
-                              }
-                              pageInfo {
-                                hasNextPage
-                                endCursor
+                                target {
+                                  ... on Commit {
+                                    history(first: 100) {
+                                      nodes {
+                                        oid
+                                        author {
+                                          name
+                                          email
+                                        }
+                                        message
+                                        messageBody
+                                        committedDate
+                                        pushedDate
+                                      }
+                                      pageInfo {
+                                        hasNextPage
+                                        endCursor
+                                      }
+                                    }
+                                  }
+                                }
                               }
                             }
                           }
                         }
-                      }
-                    }
-                  }
-                }
-                """;
+                        """;
 
 // TODO: Replacement im String Block im Rahmen von executeSync funktioniert nicht
 //        Map<String, Object> graphqlParams = new HashMap<>();
@@ -83,9 +90,9 @@ public class GithubService {
         Response graphqlResponse = null;
         try {
             //graphqlResponse = client.executeSync(graphqlQuery, graphqlParams);
-            graphqlQuery = graphqlQuery.replace("$repository", "\""+repository+"\"");
-            graphqlQuery = graphqlQuery.replace("$branch", "\""+branch+"\"");
-            graphqlQuery = graphqlQuery.replace("$owner", "\""+owner+"\"");
+            graphqlQuery = graphqlQuery.replace("$repository", "\"" + repository + "\"");
+            graphqlQuery = graphqlQuery.replace("$branch", "\"" + branch + "\"");
+            graphqlQuery = graphqlQuery.replace("$owner", "\"" + owner + "\"");
             Log.info(graphqlQuery);
             graphqlResponse = client.executeSync(graphqlQuery);
             Log.info(graphqlResponse.getErrors());
@@ -109,13 +116,29 @@ public class GithubService {
                 .withArray("nodes");
 
         for (JsonNode commitNode : commitsArray) {
+            Log.info(commitNode.toPrettyString());
             commits.add(
                     new Commit(
+                            owner,
+                            repository,
+                            branch,
+                            commitNode.get("oid").asText("n/a"),
                             commitNode.get("message").asText("n/a"),
+                            commitNode.get("messageBody").asText("n/a"),
                             LocalDateTime.parse(
                                     commitNode.get("committedDate").toString().replaceAll("\"", ""),
                                     DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-                            )
+                            ),
+                            // pushedDate is null, wenn pull request is from a fork
+                            // https://github.com/telia-oss/github-pr-resource/issues/22
+                            (commitNode.get("pushedDate").isNull()) ? null :
+                                    LocalDateTime.parse(
+                                            commitNode.get("pushedDate").toString().replaceAll("\"", ""),
+                                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+                                    ),
+                            commitNode.findValue("name").asText("n/a"),
+                            commitNode.findValue("email").asText("n/a")
                     )
             );
         }
@@ -128,24 +151,24 @@ public class GithubService {
             String repository
     ) {
         String graphqlQuery =
-            """
-            {
-               repository(owner: "$owner", name: "$repository") {
-                 refs(first: 10, refPrefix: "refs/heads/", after: "") {
-                   totalCount
-                   edges {
-                     node {
-                       name
-                     }
-                   }
-                   pageInfo {
-                     hasNextPage
-                     endCursor
-                   }
-                 }
-               }
-             }
-            """;
+                """
+                        {
+                           repository(owner: "$owner", name: "$repository") {
+                             refs(first: 10, refPrefix: "refs/heads/", after: "") {
+                               totalCount
+                               edges {
+                                 node {
+                                   name
+                                 }
+                               }
+                               pageInfo {
+                                 hasNextPage
+                                 endCursor
+                               }
+                             }
+                           }
+                         }
+                        """;
 
         Response graphqlResponse = null;
         try {
@@ -180,7 +203,7 @@ public class GithubService {
                 .withArray("edges");
 
         for (JsonNode commitNode : commitsArray) {
-              branches.add(commitNode.findPath("name").asText("n/a"));
+            branches.add(commitNode.findPath("name").asText("n/a"));
         }
 
         return branches;
@@ -195,6 +218,8 @@ public class GithubService {
         initBean.setRateLimitRemaining(Integer.parseInt(transportMeta.get("X-RateLimit-Remaining").get(0)));
         initBean.setRateLimitReset(Integer.parseInt(transportMeta.get("X-RateLimit-Reset").get(0)));
 
-    };
+    }
+
+    ;
 
 }
